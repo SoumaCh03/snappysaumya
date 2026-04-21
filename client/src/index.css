@@ -1,0 +1,896 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: white;
+  font-family: Arial, sans-serif;
+  overflow-x: hidden;
+
+  background-color: #050814;
+
+  /* artistic textured wallpaper */
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(0, 255, 255, 0.04) 0%, transparent 35%),
+    radial-gradient(circle at 80% 25%, rgba(0, 255, 255, 0.03) 0%, transparent 30%),
+    radial-gradient(circle at 50% 80%, rgba(0, 255, 255, 0.025) 0%, transparent 35%),
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+
+  background-size:
+    cover,
+    cover,
+    cover,
+    42px 42px,
+    42px 42px;
+
+  background-attachment: fixed;
+}
+
+
+/* ================= MUSIC PLAYER ================= */
+
+.music-toggle {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 50%;
+  background: cyan;
+  font-size: 1.4rem;
+  cursor: pointer;
+  z-index: 9999;
+  box-shadow: 0 0 20px rgba(0,255,255,0.4);
+  transition: all 0.3s ease;
+}
+
+.music-toggle:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 28px rgba(0,255,255,0.6);
+}
+
+
+/* ================= NAVBAR ================= */
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  padding: 18px 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(5, 8, 20, 0.75);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.nav-logo {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 1px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nav-logo:hover {
+  color: cyan;
+  text-shadow: 0 0 12px rgba(0,255,255,0.5);
+}
+
+.nav-links {
+  display: flex;
+  gap: 35px;
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.nav-links a:hover {
+  color: cyan;
+  text-shadow: 0 0 12px rgba(0,255,255,0.5);
+}
+
+/* ================= HERO SECTION ================= */
+
+.hero-section {
+  min-height: 100vh;
+  background: radial-gradient(circle at center, #091223 0%, #050814 70%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  padding: 60px 20px;
+}
+
+/* dreamy glow background */
+.hero-section::before,
+.hero-section::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.25;
+  animation: floatGlow 10s ease-in-out infinite;
+}
+
+.hero-section::before {
+  width: 420px;
+  height: 420px;
+  background: cyan;
+  top: 10%;
+  left: 10%;
+}
+
+.hero-section::after {
+  width: 380px;
+  height: 380px;
+  background: #00bfff;
+  bottom: 10%;
+  right: 10%;
+  animation-delay: 3s;
+}
+
+.hero-overlay {
+  position: absolute;
+  width: 700px;
+  height: 700px;
+  background: rgba(0, 255, 255, 0.08);
+  filter: blur(160px);
+  border-radius: 50%;
+  animation: pulseGlow 6s ease-in-out infinite;
+}
+
+.hero-subtitle {
+  position: relative;
+  z-index: 2;
+  letter-spacing: 8px;
+  font-size: 14px;
+  opacity: 0.75;
+  margin-bottom: 24px;
+  animation: fadeUp 1s ease forwards;
+}
+
+.hero-title {
+  position: relative;
+  z-index: 2;
+  font-size: clamp(4rem, 8vw, 7rem);
+  font-weight: 800;
+  margin-bottom: 20px;
+  text-shadow: 0 0 20px rgba(0, 255, 255, 0.15);
+  animation: fadeUp 1.4s ease forwards;
+}
+
+.hero-text {
+  position: relative;
+  z-index: 2;
+  font-size: 1.35rem;
+  opacity: 0.9;
+  line-height: 1.7;
+  margin-bottom: 42px;
+  max-width: 900px;
+  animation: fadeUp 1.8s ease forwards;
+}
+
+.hero-button {
+  position: relative;
+  z-index: 2;
+  padding: 16px 42px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 40px;
+  background: cyan;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.35s ease;
+  box-shadow: 0 0 25px rgba(0, 255, 255, 0.35);
+  animation: fadeUp 2.2s ease forwards;
+}
+
+.hero-button:hover {
+  transform: scale(1.06) translateY(-2px);
+  box-shadow:
+    0 0 18px rgba(0, 255, 255, 0.4),
+    0 0 35px rgba(0, 255, 255, 0.6),
+    0 0 60px rgba(0, 255, 255, 0.35);
+}
+
+/* ================= ANIMATIONS ================= */
+
+@keyframes floatGlow {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(-35px) translateX(15px);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(45px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================= ALBUMS ================= */
+
+.albums-section {
+  padding: 100px 80px;
+  background: #050814;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 3rem;
+  margin-bottom: 60px;
+}
+
+.album-controls {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.arrow-btn {
+  width: 60px;
+  height: 60px;
+  border: none;
+  border-radius: 50%;
+  background: cyan;
+  color: black;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  animation: pulseArrow 1.8s infinite;
+}
+
+.arrow-btn:hover {
+  transform: scale(1.1);
+  box-shadow:
+    0 0 15px rgba(0, 255, 255, 0.4),
+    0 0 28px rgba(0, 255, 255, 0.5);
+}
+
+@keyframes pulseArrow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(0,255,255,0.3);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 22px rgba(0,255,255,0.6);
+  }
+}
+
+.albums-grid {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding-bottom: 10px;
+}
+
+.albums-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.album-card {
+  min-width: 320px;
+  height: 500px;
+  flex-shrink: 0;
+  border-radius: 24px;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.4s ease, box-shadow 0.4s ease, min-width 0.4s ease;
+}
+
+.album-card:hover {
+  min-width: 420px;
+  transform: scale(1.02);
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.25);
+}
+
+.album-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+  display: flex;
+  align-items: flex-end;
+  padding: 30px;
+}
+
+.album-overlay h3 {
+  font-size: 2rem;
+}
+
+/* ================= CONTACT ================= */
+
+.contact-section {
+  padding: 120px 40px;
+  text-align: center;
+  background: linear-gradient(180deg, #050814, #09101f);
+}
+
+.contact-text {
+  max-width: 700px;
+  margin: 20px auto 40px;
+  font-size: 1.2rem;
+  line-height: 1.7;
+  opacity: 0.85;
+}
+
+/* ================= FOOTER ================= */
+
+.footer {
+  padding: 80px 60px 30px;
+  background: #030712;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.map-box {
+  width: 100%;
+  margin-top: 20px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.08);
+  border: 1px solid rgba(0, 255, 255, 0.08);
+}
+
+.footer-grid {
+  display: flex;
+  justify-content: space-between;
+  gap: 60px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.footer-left,
+.footer-right {
+  flex: 1;
+  min-width: 300px;
+}
+
+.social-row {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.social-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #E8F4FF;
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.35s ease;
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.08);
+  text-decoration: none;
+}
+
+.social-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: #E8F4FF;
+  transition: all 0.35s ease;
+}
+
+.social-icon:hover {
+  transform: translateY(-4px) scale(1.08);
+  box-shadow:
+    0 0 12px rgba(0, 255, 255, 0.25),
+    0 0 24px rgba(0, 255, 255, 0.35),
+    0 0 40px rgba(0, 255, 255, 0.25);
+  border-color: rgba(0, 255, 255, 0.6);
+}
+
+.social-icon:hover svg {
+  filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.8));
+}
+
+.copyright,
+.best-view {
+  text-align: center;
+  opacity: 0.6;
+  margin-top: 10px;
+}
+
+
+
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 500px;
+  margin: 20px auto;
+}
+
+.contact-form input,
+.contact-form textarea {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,255,255,0.2);
+  background: rgba(255,255,255,0.03);
+  color: white;
+  outline: none;
+}
+
+.contact-form textarea {
+  min-height: 120px;
+  resize: none;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+  border-color: cyan;
+  box-shadow: 0 0 10px rgba(0,255,255,0.3);
+}
+
+
+/* ================= MASONRY ================= */
+
+.masonry-grid {
+  display: flex;
+  margin-left: -20px;
+  width: auto;
+}
+
+.masonry-column {
+  padding-left: 20px;
+  background-clip: padding-box;
+}
+
+.masonry-column img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 25px rgba(0,255,255,0.2);
+}
+
+
+/* ================= GALLERY PAGE ================= */
+
+.gallery-page {
+  padding: 40px;
+  min-height: 100vh;
+}
+
+.gallery-title {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+/* 🔥 TRUE MASONRY */
+.gallery-grid {
+  column-count: 3;
+  column-gap: 20px;
+}
+
+.gallery-item {
+  break-inside: avoid;
+  margin-bottom: 20px;
+}
+
+.gallery-img {
+  width: 100%;
+  border-radius: 18px;
+  cursor: pointer;
+  filter: blur(12px);
+  transform: scale(1.05);
+  transition: all 0.5s ease;
+}
+
+.gallery-img.loaded {
+  filter: blur(0);
+  transform: scale(1);
+}
+
+.gallery-img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 25px rgba(0,255,255,0.2);
+}
+
+/* 📱 responsive */
+@media (max-width: 1024px) {
+  .gallery-grid {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .gallery-grid {
+    column-count: 1;
+  }
+}
+
+/* ================= LIGHTBOX ================= */
+
+.lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.96);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.lightbox-content {
+  text-align: center;
+  position: relative;
+}
+
+.lightbox-img {
+  max-width: 90vw;
+  max-height: 80vh;
+  border-radius: 20px;
+  transition: transform 0.3s ease;
+}
+
+/* watermark */
+.watermark {
+  position: absolute;
+  bottom: 10px;
+  right: 20px;
+  opacity: 0.4;
+  font-size: 14px;
+}
+
+/* title glow */
+.image-title {
+  margin-top: 15px;
+  text-shadow: 0 0 12px cyan;
+}
+
+/* exif */
+.exif {
+  opacity: 0.7;
+}
+
+/* nav buttons */
+.nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 30px;
+  background: rgba(0,255,255,0.2);
+  border: none;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.nav-btn.left { left: 30px; }
+.nav-btn.right { right: 30px; }
+
+/* zoom */
+.zoom-controls button {
+  margin: 5px;
+  padding: 6px 12px;
+  background: cyan;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* ================= MODERN BUTTON SYSTEM ================= */
+
+.nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+
+  font-size: 26px;
+  color: white;
+
+  background: rgba(0, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+
+  border: 1px solid rgba(0, 255, 255, 0.2);
+
+  box-shadow:
+    0 0 15px rgba(0,255,255,0.15),
+    inset 0 0 10px rgba(0,255,255,0.05);
+
+  transition: all 0.35s ease;
+}
+
+.nav-btn.left {
+  left: 40px;
+}
+
+.nav-btn.right {
+  right: 40px;
+}
+
+/* 🔥 Hover */
+.nav-btn:hover {
+  transform: translateY(-50%) scale(1.12);
+  background: rgba(0, 255, 255, 0.15);
+
+  box-shadow:
+    0 0 25px rgba(0,255,255,0.4),
+    0 0 50px rgba(0,255,255,0.2);
+}
+
+/* 💥 Click feel */
+.nav-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+
+/* ================= ZOOM BUTTONS ================= */
+
+.zoom-controls {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.zoom-controls button {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+
+  background: rgba(0,255,255,0.1);
+  color: white;
+
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+
+  border: 1px solid rgba(0,255,255,0.2);
+
+  transition: all 0.3s ease;
+}
+
+/* hover */
+.zoom-controls button:hover {
+  transform: scale(1.1);
+  background: rgba(0,255,255,0.25);
+
+  box-shadow:
+    0 0 15px rgba(0,255,255,0.5),
+    0 0 30px rgba(0,255,255,0.3);
+}
+
+/* active */
+.zoom-controls button:active {
+  transform: scale(0.9);
+}
+
+
+/* ================= MAGNETIC EFFECT ================= */
+
+.magnetic {
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+
+/* ================= RIPPLE ================= */
+
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: rgba(0,255,255,0.5);
+  border-radius: 50%;
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ripple.active::after {
+  animation: rippleAnim 0.6s ease-out;
+}
+
+@keyframes rippleAnim {
+  from {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(20);
+    opacity: 0;
+  }
+}
+
+/* ================= GLOW TRAIL ================= */
+
+.glow-trail {
+  position: fixed;
+  width: 12px;
+  height: 12px;
+  background: cyan;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.6;
+  filter: blur(6px);
+  animation: fadeTrail 0.6s linear forwards;
+}
+
+@keyframes fadeTrail {
+  to {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+/* ================= HOVER PHYSICS ================= */
+
+.gallery-item {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+
+/* ================= FIX: LIGHTBOX LAYOUT (SAFE PATCH) ================= */
+
+/* Ensure lightbox is centered properly */
+.lightbox {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+/* Wrap image + info cleanly */
+.lightbox-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 90vw;
+  margin: auto;
+}
+
+/* Fix image scaling */
+.lightbox-content img {
+  max-width: 85vw !important;
+  max-height: 75vh !important;
+  object-fit: contain;
+  border-radius: 18px;
+}
+
+/* Fix title position */
+.lightbox-content h2 {
+  margin-top: 16px;
+  font-size: 1.6rem;
+  text-align: center;
+}
+
+/* Fix EXIF position */
+.lightbox-content p {
+  margin-top: 6px;
+  opacity: 0.7;
+  text-align: center;
+}
+
+/* Fix nav buttons */
+.lightbox button {
+  z-index: 10000;
+}
+
+/* Left button */
+.lightbox button:first-of-type {
+  left: 30px !important;
+  top: 50% !important;
+  transform: translateY(-50%);
+}
+
+/* Right button */
+.lightbox button:last-of-type {
+  right: 30px !important;
+  top: 50% !important;
+  transform: translateY(-50%);
+}
+
+/* Fix zoom panel */
+.zoom-controls {
+  position: absolute !important;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+}
+
+/* Prevent weird overflow */
+.lightbox * {
+  box-sizing: border-box;
+}
+
+/* ================= LIKE BUTTON ================= */
+
+.like-btn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+
+  background: rgba(0,255,255,0.08);
+  color: white;
+
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+
+  border: 1px solid rgba(0,255,255,0.2);
+
+  transition: all 0.3s ease;
+}
+
+.like-btn:hover {
+  transform: scale(1.05);
+  background: rgba(0,255,255,0.2);
+
+  box-shadow:
+    0 0 12px rgba(0,255,255,0.4),
+    0 0 25px rgba(0,255,255,0.2);
+}
+
+.like-btn:active {
+  transform: scale(0.9);
+}
+
