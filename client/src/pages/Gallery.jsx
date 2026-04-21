@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import EXIF from "exif-js";
 import Masonry from "react-masonry-css";
 import { API } from "../config";
+import { fetchAlbum } from "../utils/api"; // ✅ ADDED
 
 const hasLikedInStorage = (url) => {
   if (typeof window === "undefined") return false;
@@ -144,9 +145,7 @@ function Gallery() {
 
       const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
       img.style.boxShadow = `0 0 40px rgb(${r}, ${g}, ${b})`;
-    } catch {
-      // Ignore image/canvas failures, including cross-origin restrictions.
-    }
+    } catch {}
   };
 
   const handleLike = async (e, imageUrl) => {
@@ -185,9 +184,7 @@ function Gallery() {
 
       try {
         window.localStorage.setItem(`liked_${imageUrl}`, "true");
-      } catch {
-        // Ignore storage failures.
-      }
+      } catch {}
     } catch (err) {
       console.error(err);
       setLikedImages((prev) => {
@@ -223,28 +220,23 @@ function Gallery() {
       return () => controller.abort();
     }
 
-    fetch(`${API}/api/gallery/${id}`, { signal: controller.signal })
-      .then(async (res) => {
-        if (!res.ok) {
-          throw new Error(`Failed to load gallery (${res.status})`);
-        }
-
-        const raw = await res.json();
+    // ✅ UPDATED (clean API usage)
+    fetchAlbum(id)
+      .then((data) => {
         const normalized =
-          raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+          data && typeof data === "object" && !Array.isArray(data) ? data : {};
 
-        return {
+        const cleanData = {
           ...normalized,
           images: Array.isArray(normalized.images)
             ? normalized.images.filter((imgObj) => imgObj?.url)
             : [],
         };
-      })
-      .then((data) => {
-        setAlbum(data);
+
+        setAlbum(cleanData);
 
         const nextLikedImages = {};
-        data.images.forEach((imgObj) => {
+        cleanData.images.forEach((imgObj) => {
           if (hasLikedInStorage(imgObj.url)) {
             nextLikedImages[imgObj.url] = true;
           }
@@ -253,14 +245,11 @@ function Gallery() {
         setLikedImages(nextLikedImages);
       })
       .catch((err) => {
-        if (err.name === "AbortError") return;
         console.error(err);
         setError("Failed to load gallery.");
       })
       .finally(() => {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
+        setLoading(false);
       });
 
     return () => controller.abort();
@@ -510,8 +499,8 @@ function Gallery() {
             <h2 className="image-title">Image {selectedIndex + 1}</h2>
 
             <p className="exif">
-              {exifData?.camera || "Camera N/A"} • ISO {exifData?.iso || "--"} •
-              {" "}f/{exifData?.aperture || "--"} • {exifData?.shutter || "--"}
+              {exifData?.camera || "Camera N/A"} • ISO {exifData?.iso || "--"} •{" "}
+              f/{exifData?.aperture || "--"} • {exifData?.shutter || "--"}
             </p>
 
             <div className="zoom-controls">

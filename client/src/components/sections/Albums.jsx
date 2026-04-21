@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { API } from "../../config";
+import { fetchAlbums } from "../../utils/api";
 
 function Albums() {
   const scrollRef = useRef(null);
@@ -10,16 +10,18 @@ function Albums() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API}/api/gallery`)
-      .then((res) => res.json())
-      .then((data) => {
+    const loadAlbums = async () => {
+      try {
+        const data = await fetchAlbums();
         setAlbums(data || []);
-        setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Error fetching albums:", err);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    loadAlbums();
   }, []);
 
   const scroll = (direction) => {
@@ -57,7 +59,10 @@ function Albums() {
               key={album.id}
               onClick={() => navigate(`/gallery/${album.id}`)}
               style={{
-                backgroundImage: `url(${album.cover.replace('/upload/', '/upload/q_auto,f_auto/')})`, // ✅ FIXED
+                backgroundImage: `url(${album.cover?.replace(
+                  "/upload/",
+                  "/upload/q_auto,f_auto/"
+                )})`,
                 cursor: "pointer",
                 backgroundSize: "cover",
                 backgroundPosition: "center",

@@ -11,15 +11,18 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
-  "dependencies": {
-    "cloudinary": "^2.9.0",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^4.18.2",
-    "multer": "^2.1.1",
-    "react-masonry-css": "^1.0.16",
-    "sharp": "^0.34.5"
+  "engines": {
+    "node": ">=18"
   },
+  "dependencies": {
+  "cloudinary": "^1.41.3",
+  "cors": "^2.8.6",
+  "dotenv": "^17.4.2",
+  "express": "^4.18.2",
+  "multer": "^2.1.1",
+  "multer-storage-cloudinary": "^4.0.0",
+  "sharp": "^0.34.5"
+},
   "devDependencies": {
     "nodemon": "^3.1.14"
   }

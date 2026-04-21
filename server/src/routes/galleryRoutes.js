@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const fs = require("fs");
-const path = require("path");
+
+const upload = require("../middleware/multer");
+const cloudinary = require("../utils/cloudinary");
 
 /* ================= LIKE STORE ================= */
 
@@ -27,59 +28,33 @@ const albums = [
   { id: "portraits", title: "Portraits" },
 ];
 
-/* ================= HELPERS ================= */
+/* ================= CLOUDINARY HELPERS ================= */
 
-// 🔥 ROOT uploads folder
-const UPLOADS_PATH = path.join(__dirname, "../../uploads");
-
-/* ================= GET IMAGES ================= */
-
-const getImages = (folder) => {
+// 📂 Fetch images from Cloudinary folder
+const getImages = async (folder) => {
   try {
-    const dirPath = path.join(UPLOADS_PATH, folder);
+    const result = await cloudinary.search
+      .expression(`folder:snappysaumya/${folder}`)
+      .sort_by("created_at", "desc")
+      .max_results(100)
+      .execute();
 
-    console.log("📂 Reading folder:", dirPath);
-
-    if (!fs.existsSync(dirPath)) {
-      console.log("❌ Folder not found:", folder);
-      return [];
-    }
-
-    const files = fs.readdirSync(dirPath);
-
-    console.log(`✅ ${files.length} files found in ${folder}`);
-
-    return files.map((file) => ({
-      url: `http://localhost:5000/uploads/${folder}/${file}`,
-      public_id: file,
-      tags: getTags(file),
+    return result.resources.map((img) => ({
+      url: img.secure_url,
+      public_id: img.public_id,
+      tags: getTags(img.public_id),
     }));
   } catch (err) {
-    console.error("❌ getImages error:", err);
+    console.error("❌ Cloudinary getImages error:", err);
     return [];
   }
 };
 
-/* ================= GET COVER ================= */
-
-const getCover = (folder) => {
+// 🖼️ Get album cover (latest image)
+const getCover = async (folder) => {
   try {
-    const dirPath = path.join(UPLOADS_PATH, folder);
-
-    if (!fs.existsSync(dirPath)) return null;
-
-    const files = fs.readdirSync(dirPath);
-
-    if (!files.length) return null;
-
-    // 🔥 Prefer cover file
-    const coverFile = files.find((f) =>
-      f.toLowerCase().includes("cover")
-    );
-
-    const finalFile = coverFile || files[0];
-
-    return `http://localhost:5000/uploads/${folder}/${finalFile}`;
+    const images = await getImages(folder);
+    return images.length ? images[0].url : null;
   } catch (err) {
     console.error("❌ getCover error:", err);
     return null;
@@ -89,15 +64,15 @@ const getCover = (folder) => {
 /* ================= ROUTES ================= */
 
 // 📦 GET ALL ALBUMS
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    console.log("🚀 Fetching all albums");
-
-    const data = albums.map((album) => ({
-      id: album.id,
-      title: album.title,
-      cover: getCover(album.id),
-    }));
+    const data = await Promise.all(
+      albums.map(async (album) => ({
+        id: album.id,
+        title: album.title,
+        cover: await getCover(album.id),
+      }))
+    );
 
     res.json(data);
   } catch (err) {
@@ -107,7 +82,7 @@ router.get("/", (req, res) => {
 });
 
 // 📂 GET SINGLE ALBUM
-router.get("/:id", (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const album = albums.find((a) => a.id === req.params.id);
 
@@ -115,8 +90,8 @@ router.get("/:id", (req, res) => {
       return res.status(404).json({ message: "Album not found" });
     }
 
-    const images = getImages(album.id);
-    const cover = getCover(album.id);
+    const images = await getImages(album.id);
+    const cover = await getCover(album.id);
 
     res.json({
       id: album.id,
@@ -130,7 +105,26 @@ router.get("/:id", (req, res) => {
   }
 });
 
-/* ================= ❤️ LIKE ================= */
+/* ================= 🔥 UPLOAD ================= */
+
+// Upload to specific album
+router.post("/upload/:album", upload.single("image"), (req, res) => {
+  try {
+    res.status(200).json({
+      message: "Image uploaded successfully",
+      imageUrl: req.file.path,
+      public_id: req.file.filename,
+      album: req.params.album,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Upload failed",
+      error: error.message,
+    });
+  }
+});
+
+/* ================= ❤️ LIKE SYSTEM ================= */
 
 router.post("/like", (req, res) => {
   const { image } = req.body;
