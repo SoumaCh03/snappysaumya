@@ -25,15 +25,19 @@ function Albums() {
   }, []);
 
   const scroll = (direction) => {
-    if (!scrollRef.current) return;
+  if (!scrollRef.current) return;
 
-    const amount = 420;
+  const container = scrollRef.current;
 
-    scrollRef.current.scrollBy({
-      left: direction === "left" ? -amount : amount,
-      behavior: "smooth",
-    });
-  };
+  // 🔥 Dynamic scroll based on screen size
+  const isMobile = window.innerWidth < 768;
+  const amount = isMobile ? 260 : 420;
+
+  container.scrollBy({
+    left: direction === "left" ? -amount : amount,
+    behavior: "smooth",
+  });
+};
 
   return (
     <section id="albums" className="albums-section">
