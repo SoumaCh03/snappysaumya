@@ -974,3 +974,30 @@ body {
   transform: scale(0.9);
 }
 
+
+/* ================= HERO MOBILE FIX (SAFE PATCH) ================= */
+
+@media (max-width: 768px) {
+
+  /* Fix extra top gap caused by navbar + 100vh */
+  .hero-section {
+    min-height: calc(100vh - 60px);
+    padding-top: 10px !important;
+  }
+
+  /* Prevent title overflow ONLY on small screens */
+  .hero-title {
+    font-size: 2.8rem !important;
+    line-height: 1.1;
+  }
+
+  /* Slight spacing correction */
+  .hero-subtitle {
+    margin-bottom: 14px;
+  }
+
+  .hero-text {
+    font-size: 1rem;
+    margin-bottom: 28px;
+  }
+}
