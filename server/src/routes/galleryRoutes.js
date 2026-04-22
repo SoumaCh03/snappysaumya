@@ -3,11 +3,13 @@ const router = express.Router();
 
 const upload = require("../middleware/multer");
 const cloudinary = require("../utils/cloudinary");
-const Image = require("../models/Image"); // 🔥 NEW
+const Image = require("../models/Image");
+const Album = require("../models/Album");
+const protect = require("../middleware/authMiddleware");
 
 /* ================= TAG SYSTEM ================= */
 
-const getTags = (name) => {
+const getTags = (name = "") => {
   const lower = name.toLowerCase();
 
   if (lower.includes("land")) return ["landscape", "nature"];
@@ -17,17 +19,8 @@ const getTags = (name) => {
   return ["general"];
 };
 
-/* ================= ALBUM CONFIG ================= */
-
-const albums = [
-  { id: "landscapes", title: "Landscapes" },
-  { id: "journeys", title: "Journeys" },
-  { id: "portraits", title: "Portraits" },
-];
-
 /* ================= CLOUDINARY HELPERS ================= */
 
-// 📂 Fetch images from Cloudinary folder
 const getImages = async (folder) => {
   try {
     const result = await cloudinary.search
@@ -47,7 +40,6 @@ const getImages = async (folder) => {
   }
 };
 
-// 🖼️ Get album cover (latest image)
 const getCover = async (folder) => {
   try {
     const images = await getImages(folder);
@@ -60,14 +52,16 @@ const getCover = async (folder) => {
 
 /* ================= ROUTES ================= */
 
-// 📦 GET ALL ALBUMS
+// 📦 GET ALL ALBUMS (FROM DB)
 router.get("/", async (req, res) => {
   try {
+    const albums = await Album.find().sort({ order: 1 });
+
     const data = await Promise.all(
       albums.map(async (album) => ({
-        id: album.id,
+        id: album.slug,
         title: album.title,
-        cover: await getCover(album.id),
+        cover: await getCover(album.slug),
       }))
     );
 
@@ -79,32 +73,33 @@ router.get("/", async (req, res) => {
 });
 
 // 📂 GET SINGLE ALBUM
-router.get("/:id", async (req, res) => {
+router.get("/:slug", async (req, res) => {
   try {
-    const album = albums.find((a) => a.id === req.params.id);
+    const album = await Album.findOne({ slug: req.params.slug });
 
     if (!album) {
       return res.status(404).json({ message: "Album not found" });
     }
 
-    const images = await getImages(album.id);
+    const images = await getImages(album.slug);
 
-    // 🔥 Attach likes from DB
-    const imagesWithLikes = await Promise.all(
-      images.map(async (img) => {
-        const dbImage = await Image.findOne({ url: img.url });
+    const urls = images.map((img) => img.url);
+    const dbImages = await Image.find({ url: { $in: urls } });
 
-        return {
-          ...img,
-          likes: dbImage ? dbImage.likes : 0,
-        };
-      })
-    );
+    const likesMap = {};
+    dbImages.forEach((img) => {
+      likesMap[img.url] = img.likes;
+    });
 
-    const cover = await getCover(album.id);
+    const imagesWithLikes = images.map((img) => ({
+      ...img,
+      likes: likesMap[img.url] || 0,
+    }));
+
+    const cover = await getCover(album.slug);
 
     res.json({
-      id: album.id,
+      id: album.slug,
       title: album.title,
       cover,
       images: imagesWithLikes,
@@ -115,45 +110,91 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-/* ================= 🔥 UPLOAD ================= */
+/* ================= UPLOAD ================= */
 
-router.post("/upload/:album", upload.single("image"), async (req, res) => {
+router.post("/upload/:album", protect, (req, res) => {
+  upload.single("image")(req, res, async (err) => {
+    try {
+      // 🔥 HANDLE MULTER / CLOUDINARY ERRORS
+      if (err) {
+        console.error("❌ Multer error:", err);
+
+        if (err.message?.includes("File size too large")) {
+          return res.status(400).json({
+            message: "Image too large. Max allowed ~10MB",
+          });
+        }
+
+        return res.status(500).json({
+          message: err.message || "Upload failed",
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const imageUrl = req.file.path;
+
+      const newImage = await Image.create({
+        title: req.file.filename || "Untitled",
+        url: imageUrl,
+        album: req.params.album,
+      });
+
+      res.json({
+        message: "Upload successful",
+        image: newImage,
+      });
+
+    } catch (error) {
+      console.error("🔥 Upload crash:", error);
+      res.status(500).json({
+        message: "Upload failed",
+        error: error.message,
+      });
+    }
+  });
+});
+
+/* ================= DELETE ================= */
+
+router.delete("/delete", protect, async (req, res) => {
   try {
-    const imageUrl = req.file.path;
+    const { url } = req.body;
 
-    // 🔥 Save to DB
-    const newImage = await Image.create({
-      title: req.file.filename,
-      url: imageUrl,
-      album: req.params.album,
-    });
+    if (!url) {
+      return res.status(400).json({ message: "URL required" });
+    }
 
-    res.status(200).json({
-      message: "Image uploaded & saved to DB",
-      image: newImage,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Upload failed",
-      error: error.message,
-    });
+    const parts = url.split("/");
+    const fileName = parts[parts.length - 1];
+    const folder = parts[parts.length - 2];
+
+    const publicId = `snappysaumya/${folder}/${fileName.split(".")[0]}`;
+
+    await cloudinary.uploader.destroy(publicId);
+    await Image.findOneAndDelete({ url });
+
+    res.json({ message: "Deleted successfully" });
+  } catch (err) {
+    console.error("❌ Delete error:", err);
+    res.status(500).json({ message: "Delete failed" });
   }
 });
 
-/* ================= ❤️ LIKE SYSTEM (DB BASED) ================= */
+/* ================= LIKE ================= */
 
-// 🔥 LIKE IMAGE
 router.post("/like", async (req, res) => {
   try {
     const { url } = req.body;
 
     if (!url) {
-      return res.status(400).json({ error: "Image URL required" });
+      return res.status(400).json({ error: "URL required" });
     }
 
     let image = await Image.findOne({ url });
 
-    // If image not in DB yet → create it
     if (!image) {
       image = await Image.create({
         title: "Untitled",
@@ -165,9 +206,7 @@ router.post("/like", async (req, res) => {
     image.likes += 1;
     await image.save();
 
-    res.json({
-      likes: image.likes,
-    });
+    res.json({ likes: image.likes });
   } catch (error) {
     console.error("❌ Like error:", error);
     res.status(500).json({ error: "Failed to like image" });
