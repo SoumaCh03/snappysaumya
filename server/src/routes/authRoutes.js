@@ -3,11 +3,15 @@ const router = express.Router();
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 
-const { login } = require("../controllers/authController");
+const { login, changePassword } = require("../controllers/authController");
+const protect = require("../middleware/authMiddleware");
 const Admin = require("../models/Admin");
 
 /* ================= LOGIN ================= */
 router.post("/login", login);
+
+/* ================= CHANGE PASSWORD ================= */
+router.put("/change-password", protect, changePassword);
 
 /* ================= FORGOT PASSWORD ================= */
 router.post("/forgot-password", async (req, res) => {
@@ -26,7 +30,6 @@ router.post("/forgot-password", async (req, res) => {
 
     await admin.save();
 
-    // ⚠️ For now returning token (later send via email)
     res.json({
       message: "Reset token generated",
       token: resetToken,
