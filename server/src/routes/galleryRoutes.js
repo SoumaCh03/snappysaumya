@@ -3,10 +3,7 @@ const router = express.Router();
 
 const upload = require("../middleware/multer");
 const cloudinary = require("../utils/cloudinary");
-
-/* ================= LIKE STORE ================= */
-
-let likesStore = {};
+const Image = require("../models/Image"); // 🔥 NEW
 
 /* ================= TAG SYSTEM ================= */
 
@@ -91,13 +88,26 @@ router.get("/:id", async (req, res) => {
     }
 
     const images = await getImages(album.id);
+
+    // 🔥 Attach likes from DB
+    const imagesWithLikes = await Promise.all(
+      images.map(async (img) => {
+        const dbImage = await Image.findOne({ url: img.url });
+
+        return {
+          ...img,
+          likes: dbImage ? dbImage.likes : 0,
+        };
+      })
+    );
+
     const cover = await getCover(album.id);
 
     res.json({
       id: album.id,
       title: album.title,
       cover,
-      images,
+      images: imagesWithLikes,
     });
   } catch (err) {
     console.error("❌ Album error:", err);
@@ -107,14 +117,20 @@ router.get("/:id", async (req, res) => {
 
 /* ================= 🔥 UPLOAD ================= */
 
-// Upload to specific album
-router.post("/upload/:album", upload.single("image"), (req, res) => {
+router.post("/upload/:album", upload.single("image"), async (req, res) => {
   try {
-    res.status(200).json({
-      message: "Image uploaded successfully",
-      imageUrl: req.file.path,
-      public_id: req.file.filename,
+    const imageUrl = req.file.path;
+
+    // 🔥 Save to DB
+    const newImage = await Image.create({
+      title: req.file.filename,
+      url: imageUrl,
       album: req.params.album,
+    });
+
+    res.status(200).json({
+      message: "Image uploaded & saved to DB",
+      image: newImage,
     });
   } catch (error) {
     res.status(500).json({
@@ -124,41 +140,38 @@ router.post("/upload/:album", upload.single("image"), (req, res) => {
   }
 });
 
-/* ================= ❤️ LIKE SYSTEM ================= */
+/* ================= ❤️ LIKE SYSTEM (DB BASED) ================= */
 
-router.post("/like", (req, res) => {
-  const { image } = req.body;
-  const userIP = req.ip;
+// 🔥 LIKE IMAGE
+router.post("/like", async (req, res) => {
+  try {
+    const { url } = req.body;
 
-  if (!image) return res.status(400).json({ error: "Image required" });
+    if (!url) {
+      return res.status(400).json({ error: "Image URL required" });
+    }
 
-  if (!likesStore[image]) {
-    likesStore[image] = { count: 0, users: new Set() };
-  }
+    let image = await Image.findOne({ url });
 
-  if (likesStore[image].users.has(userIP)) {
-    return res.json({
-      likes: likesStore[image].count,
-      alreadyLiked: true,
+    // If image not in DB yet → create it
+    if (!image) {
+      image = await Image.create({
+        title: "Untitled",
+        url,
+        album: "unknown",
+      });
+    }
+
+    image.likes += 1;
+    await image.save();
+
+    res.json({
+      likes: image.likes,
     });
+  } catch (error) {
+    console.error("❌ Like error:", error);
+    res.status(500).json({ error: "Failed to like image" });
   }
-
-  likesStore[image].users.add(userIP);
-  likesStore[image].count++;
-
-  res.json({
-    likes: likesStore[image].count,
-    alreadyLiked: false,
-  });
-});
-
-// 📊 GET LIKES
-router.get("/likes", (req, res) => {
-  const clean = {};
-  for (let key in likesStore) {
-    clean[key] = likesStore[key].count;
-  }
-  res.json(clean);
 });
 
 module.exports = router;

@@ -3,7 +3,15 @@ require("dotenv").config();
 
 const cors = require("cors");
 
+// 🔥 IMPORT DB CONNECTOR
+const connectDB = require("./src/config/db");
+
 const app = express();
+
+/* ================= CONNECT DATABASE ================= */
+
+// 🔥 Connect to MongoDB
+connectDB();
 
 /* ================= MIDDLEWARE ================= */
 

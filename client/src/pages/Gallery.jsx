@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import EXIF from "exif-js";
 import Masonry from "react-masonry-css";
 import { API } from "../config";
-import { fetchAlbum } from "../utils/api"; // ✅ ADDED
+import { fetchAlbum } from "../utils/api";
 
 const hasLikedInStorage = (url) => {
   if (typeof window === "undefined") return false;
@@ -51,6 +51,171 @@ const formatShutter = (value) => {
   }
 
   return `1/${Math.round(1 / numeric)}s`;
+};
+
+const getImageUrl = (value) => {
+  if (typeof value === "string" && value) {
+    return value;
+  }
+
+  if (value && typeof value === "object") {
+    if (typeof value.url === "string" && value.url) {
+      return value.url;
+    }
+
+    if (typeof value.imageUrl === "string" && value.imageUrl) {
+      return value.imageUrl;
+    }
+
+    if (typeof value.image === "string" && value.image) {
+      return value.image;
+    }
+  }
+
+  return "";
+};
+
+const getLikeCount = (value) => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  if (value && typeof value === "object") {
+    const candidates = [
+      value.likes,
+      value.likeCount,
+      value.count,
+      value.totalLikes,
+      value.data?.likes,
+      value.data?.likeCount,
+      value.data?.count,
+    ];
+
+    for (const candidate of candidates) {
+      const numeric = getLikeCount(candidate);
+
+      if (numeric !== null) {
+        return numeric;
+      }
+    }
+  }
+
+  return null;
+};
+
+const isImageLikeRecord = (value) =>
+  Boolean(getImageUrl(value)) && getLikeCount(value) !== null;
+
+const normalizeLikes = (value) => {
+  if (Array.isArray(value)) {
+    return value.reduce((acc, item) => {
+      Object.assign(acc, normalizeLikes(item));
+      return acc;
+    }, {});
+  }
+
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+
+  if (isImageLikeRecord(value)) {
+    const imageUrl = getImageUrl(value);
+    const count = getLikeCount(value);
+
+    return imageUrl && count !== null ? { [imageUrl]: count } : {};
+  }
+
+  for (const key of ["data", "likes", "items", "results"]) {
+    const nested = normalizeLikes(value[key]);
+
+    if (Object.keys(nested).length > 0) {
+      return nested;
+    }
+  }
+
+  return Object.entries(value).reduce((acc, [key, item]) => {
+    if (typeof item === "number" || typeof item === "string") {
+      const count = getLikeCount(item);
+
+      if (count !== null) {
+        acc[key] = count;
+      }
+
+      return acc;
+    }
+
+    if (!item || typeof item !== "object") {
+      return acc;
+    }
+
+    const nested = normalizeLikes(item);
+
+    if (Object.keys(nested).length > 0) {
+      Object.assign(acc, nested);
+      return acc;
+    }
+
+    const count = getLikeCount(item);
+
+    if (count !== null) {
+      acc[key] = count;
+    }
+
+    return acc;
+  }, {});
+};
+
+const mergeLikes = (currentLikes, incomingLikes) => {
+  const next = { ...currentLikes };
+
+  Object.entries(incomingLikes).forEach(([imageUrl, count]) => {
+    const numericCount = Number(count);
+
+    if (!Number.isFinite(numericCount)) {
+      return;
+    }
+
+    const currentCount = Number(next[imageUrl]) || 0;
+    next[imageUrl] = Math.max(currentCount, numericCount);
+  });
+
+  return next;
+};
+
+const resolveLikeCountForImage = (payload, imageUrl, fallback) => {
+  const normalized = normalizeLikes(payload);
+
+  if (typeof normalized[imageUrl] === "number") {
+    return normalized[imageUrl];
+  }
+
+  const directCount = getLikeCount(payload);
+  return directCount === null ? fallback : directCount;
+};
+
+const requestLike = async (imageUrl) => {
+  const send = (payload) =>
+    fetch(`${API}/api/gallery/like`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+  const response = await send({ url: imageUrl });
+
+  if (response.ok || response.status < 400 || response.status >= 500) {
+    return response;
+  }
+
+  return send({ image: imageUrl });
 };
 
 function Gallery() {
@@ -160,25 +325,31 @@ function Gallery() {
     setLikedImages((prev) => ({ ...prev, [imageUrl]: true }));
 
     try {
-      const res = await fetch(`${API}/api/gallery/like`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: imageUrl }),
-      });
+      const res = await requestLike(imageUrl);
 
       if (!res.ok) {
         throw new Error(`Failed to like image (${res.status})`);
       }
 
-      const data = await res.json();
+      let data = null;
+
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
 
       setLikes((prev) => {
         const currentLikes = Number(prev[imageUrl]) || 0;
+        const nextLikes = resolveLikeCountForImage(
+          data,
+          imageUrl,
+          currentLikes + 1
+        );
 
         return {
           ...prev,
-          [imageUrl]:
-            typeof data?.likes === "number" ? data.likes : currentLikes + 1,
+          [imageUrl]: Math.max(currentLikes + 1, nextLikes),
         };
       });
 
@@ -202,7 +373,7 @@ function Gallery() {
   };
 
   useEffect(() => {
-    const controller = new AbortController();
+    let cancelled = false;
 
     setLoading(true);
     setError("");
@@ -217,12 +388,15 @@ function Gallery() {
     if (!id) {
       setLoading(false);
       setError("Gallery not found.");
-      return () => controller.abort();
+      return () => {
+        cancelled = true;
+      };
     }
 
-    // ✅ UPDATED (clean API usage)
     fetchAlbum(id)
       .then((data) => {
+        if (cancelled) return;
+
         const normalized =
           data && typeof data === "object" && !Array.isArray(data) ? data : {};
 
@@ -243,16 +417,22 @@ function Gallery() {
         });
 
         setLikedImages(nextLikedImages);
+        setLikes((prev) => mergeLikes(prev, normalizeLikes(cleanData.images)));
       })
       .catch((err) => {
+        if (cancelled) return;
         console.error(err);
         setError("Failed to load gallery.");
       })
       .finally(() => {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       });
 
-    return () => controller.abort();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   useEffect(() => {
@@ -262,11 +442,11 @@ function Gallery() {
       .then(async (res) => {
         if (!res.ok) return {};
 
-        const raw = await res.json();
-        return raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+        const raw = await res.json().catch(() => ({}));
+        return normalizeLikes(raw);
       })
       .then((data) => {
-        setLikes(data);
+        setLikes((prev) => mergeLikes(prev, data));
       })
       .catch((err) => {
         if (err.name !== "AbortError") {
