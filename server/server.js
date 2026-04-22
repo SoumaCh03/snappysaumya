@@ -3,7 +3,16 @@ require("dotenv").config();
 
 const cors = require("cors");
 
+// 🔥 IMPORT DB CONNECTOR
+const connectDB = require("./src/config/db");
+
 const app = express();
+
+
+/* ================= CONNECT DATABASE ================= */
+
+// 🔥 Connect to MongoDB
+connectDB();
 
 /* ================= MIDDLEWARE ================= */
 
@@ -26,6 +35,14 @@ app.get("/", (req, res) => {
 const galleryRoutes = require("./src/routes/galleryRoutes");
 app.use("/api/gallery", galleryRoutes);
 
+
+/* ================= ALBUM ROUTES ================= */
+
+const albumRoutes = require("./src/routes/albumRoutes");
+
+app.use("/api/albums", albumRoutes);
+
+
 /* ================= START SERVER ================= */
 
 const PORT = process.env.PORT || 5000;
@@ -33,3 +50,8 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
+
+const authRoutes = require("./src/routes/authRoutes");
+app.use("/api/auth", authRoutes);
+

@@ -4,16 +4,25 @@ const cloudinary = require("../utils/cloudinary");
 
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: (req, file) => {
-    const album = req.params.album || "general";
+  params: async (req, file) => {
+    if (!req.params.album) {
+      throw new Error("Album not provided");
+    }
 
     return {
-      folder: `snappysaumya/${album}`,
-      allowed_formats: ["jpg", "png", "jpeg", "webp"],
+      folder: `snappysaumya/${req.params.album}`,
+      allowed_formats: ["jpg", "jpeg", "png", "webp"],
+      format: "webp", // 🔥 force webp
+      public_id: `${Date.now()}-${file.originalname.split(".")[0]}`,
     };
   },
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 🔥 50MB safe
+  },
+});
 
 module.exports = upload;
