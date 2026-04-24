@@ -161,27 +161,42 @@ router.post("/upload/:album", protect, (req, res) => {
 
 router.delete("/delete", protect, async (req, res) => {
   try {
+    console.log("🔥 NEW DELETE ROUTE HIT");
+
     const { url } = req.body;
 
     if (!url) {
       return res.status(400).json({ message: "URL required" });
     }
 
+    // ✅ Extract correct public_id from Cloudinary URL
     const parts = url.split("/");
-    const fileName = parts[parts.length - 1];
-    const folder = parts[parts.length - 2];
+    const uploadIndex = parts.findIndex((p) => p === "upload");
 
-    const publicId = `snappysaumya/${folder}/${fileName.split(".")[0]}`;
+    const publicIdWithVersion = parts.slice(uploadIndex + 1).join("/");
 
-    await cloudinary.uploader.destroy(publicId);
+    const publicId = publicIdWithVersion
+      .replace(/^v\d+\//, "")
+      .replace(/\.[^/.]+$/, "");
+
+    console.log("🧠 Extracted public_id:", publicId);
+
+    // ✅ Delete from Cloudinary
+    const result = await cloudinary.uploader.destroy(publicId);
+    console.log("☁️ Cloudinary delete result:", result);
+
+    // ✅ Delete from DB
     await Image.findOneAndDelete({ url });
 
     res.json({ message: "Deleted successfully" });
+
   } catch (err) {
     console.error("❌ Delete error:", err);
     res.status(500).json({ message: "Delete failed" });
   }
 });
+
+
 
 /* ================= LIKE ================= */
 
