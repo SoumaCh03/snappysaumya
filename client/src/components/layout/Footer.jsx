@@ -16,7 +16,36 @@ function Footer() {
             <a href="https://pixlr.com/" className="social-icon">P</a>
           </div>
 
-          {/* 🔥 ADMIN LINK (FIXED POSITION) */}
+          {/* 🔥 NEW: TECHYSAUMYA LINK (SEO + BRAND CONNECT) */}
+          <div style={{ marginTop: "18px" }}>
+            <a
+              href="https://techysaumyadeep.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-block",
+                fontSize: "14px",
+                textDecoration: "none",
+                color: "#38bdf8",
+                letterSpacing: "0.5px",
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = "translateY(-2px)";
+                e.target.style.textShadow = "0 0 10px rgba(56,189,248,0.8)";
+                e.target.style.color = "#7dd3fc";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.textShadow = "none";
+                e.target.style.color = "#38bdf8";
+              }}
+            >
+              💻 Explore My Tech Portfolio (TechySaumya)
+            </a>
+          </div>
+
+          {/* 🔥 ADMIN LINK (UNCHANGED) */}
           <div style={{ marginTop: "20px" }}>
             <a
               href="/admin/login"
