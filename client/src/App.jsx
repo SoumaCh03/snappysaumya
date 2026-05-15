@@ -24,6 +24,29 @@ function App() {
   // 🔥 Detect admin route
   const isAdminRoute = location.pathname.startsWith("/admin");
 
+  // 🔥 Smooth hash scroll
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace("#", "");
+
+      const element = document.getElementById(id);
+
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 100);
+      }
+    } else {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
+  }, [location]);
+
   // ⌨️ Keyboard shortcut (Ctrl + Shift + A)
   useEffect(() => {
     const handler = (e) => {
